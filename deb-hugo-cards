@@ -1,0 +1,43 @@
+FROM debian:bullseye-slim
+
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    gnupg \
+    ca-certificates \
+    unzip \
+    build-essential && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs golang && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+RUN curl -L https://github.com/sass/dart-sass-embedded/releases/download/1.62.1/sass_embedded-1.62.1-linux-x64.tar.gz -o /tmp/sass_embedded.tar.gz \
+    && mkdir -p /opt/sass_embedded \
+    && tar -xzf /tmp/sass_embedded.tar.gz -C /opt/sass_embedded \
+    && ln -s /opt/sass_embedded/sass_embedded /usr/local/bin/sass_embedded \
+    && rm /tmp/sass_embedded.tar.gz
+
+
+
+RUN curl -L https://github.com/gohugoio/hugo/releases/download/v0.145.0/hugo_extended_0.145.0_Linux-64bit.tar.gz \
+    | tar -xz -C /usr/local/bin hugo
+
+
+RUN wget https://github.com/sass/dart-sass/releases/download/1.72.0/dart-sass-1.72.0-linux-x64.tar.gz -O /tmp/dart-sass.tar.gz \
+    && tar -xzf /tmp/dart-sass.tar.gz -C /opt/ \
+    && ln -s /opt/dart-sass/sass /usr/local/bin/sass \
+    && rm /tmp/dart-sass.tar.gz
+
+WORKDIR /src
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+RUN npm install -g @hbstack/node-packages
+
+WORKDIR /src
+ENTRYPOINT ["sh"]
+CMD ["-c", "hugo --gc --minify && tail -f /dev/null"]
